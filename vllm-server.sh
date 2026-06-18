@@ -24,11 +24,13 @@ MAX_MODEL_LEN="${MAX_MODEL_LEN:-8192}"
 # Memory cap: 30 GB max. With 128 GB unified memory, GPU_MEM_UTIL=0.24
 # gives ~30.7 GB. FP8 quantization halves model size from 48 GB to ~24 GB,
 # leaving ~6 GB for KV cache and overhead.
-GPU_MEM_UTIL="${GPU_MEM_UTIL:-0.24}"
+GPU_MEM_UTIL="${GPU_MEM_UTIL:-0.42}"
 
-# Weight quantization: FP8 halves memory bandwidth and model size.
-# Critical for fitting the 48 GB BF16 model in a 30 GB budget.
-QUANTIZATION="${QUANTIZATION:-fp8}"
+# Weight quantization: disabled by default since the user freed up memory.
+# FP8 on-the-fly quant requires cutlass_scaled_mm kernels compiled for
+# Blackwell (CC 12.1), which aren't in the default build. Set QUANTIZATION=fp8
+# only if we rebuild with TORCH_CUDA_ARCH_LIST=12.1.
+QUANTIZATION="${QUANTIZATION:-}"
 
 # Attention backend: TRITON_ATTN is required for DiffusionGemma's 512-dim
 # full-attention layers (shared with Gemma 4 architecture).
@@ -67,7 +69,7 @@ echo "=== Starting vLLM Server — DiffusionGemma 26B A4B ==="
 echo " Model: ${MODEL_PATH}"
 echo " Port: ${HOST}:${PORT}"
 echo " Context: ${MAX_MODEL_LEN}"
-echo " GPU Mem: ${GPU_MEM_UTIL} (~31 GB on 128 GB total)"
+echo " GPU Mem: ${GPU_MEM_UTIL} (~54 GB on 128 GB total)"
 echo " Quantization: ${QUANTIZATION}"
 echo " Attention: ${ATTN_BACKEND}"
 echo " Tool calls: ${TOOL_CALL_PARSER}"
@@ -85,7 +87,6 @@ ARGS=(
   "--trust-remote-code"
   "--enforce-eager"
   "--attention-config" "{\"backend\": \"${ATTN_BACKEND}\"}"
-  "--quantization" "${QUANTIZATION}"
   "--enable-auto-tool-choice"
   "--tool-call-parser" "${TOOL_CALL_PARSER}"
   "--reasoning-parser" "${REASONING_PARSER}"

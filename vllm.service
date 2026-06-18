@@ -27,8 +27,7 @@ WorkingDirectory=/srv/vllm2
 Environment=PORT=8001
 Environment=HOST=0.0.0.0
 Environment=MAX_MODEL_LEN=8192
-Environment=GPU_MEM_UTIL=0.24
-Environment=QUANTIZATION=fp8
+Environment=GPU_MEM_UTIL=0.42
 Environment=ATTN_BACKEND=TRITON_ATTN
 Environment=TOOL_CALL_PARSER=gemma4
 Environment=REASONING_PARSER=gemma4
