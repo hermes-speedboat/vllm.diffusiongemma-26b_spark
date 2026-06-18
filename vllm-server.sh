@@ -67,7 +67,7 @@ echo "=== Starting vLLM Server — DiffusionGemma 26B A4B ==="
 echo " Model: ${MODEL_PATH}"
 echo " Port: ${HOST}:${PORT}"
 echo " Context: ${MAX_MODEL_LEN}"
-echo " GPU Mem: ${GPU_MEM_UTIL} (~$((GPU_MEM_UTIL * 128)) GB on 128 GB total)"
+echo " GPU Mem: ${GPU_MEM_UTIL} (~31 GB on 128 GB total)"
 echo " Quantization: ${QUANTIZATION}"
 echo " Attention: ${ATTN_BACKEND}"
 echo " Tool calls: ${TOOL_CALL_PARSER}"
@@ -90,8 +90,7 @@ ARGS=(
   "--tool-call-parser" "${TOOL_CALL_PARSER}"
   "--reasoning-parser" "${REASONING_PARSER}"
   "--served-model-name" "google/diffusiongemma-26B-A4B-it"
-  "--max-denoising-steps" "${MAX_DENOISING_STEPS}"
-  "--canvas-length" "${CANVAS_LENGTH}"
+  "--diffusion-config" '{"canvas_length": 256, "max_denoising_steps": 48}'
 )
 
 echo "> vllm serve ${ARGS[*]}"
