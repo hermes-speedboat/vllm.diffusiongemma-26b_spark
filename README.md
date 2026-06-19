@@ -22,9 +22,24 @@ bash vllm-server.sh        # start server on port 8000
 | Quantized | ~24 GB via FP8 (`--quantization fp8`) |
 | Speed (H100 ref) | 1000+ tok/s |
 | Speed (RTX 5090 ref) | 700+ tok/s |
+| Speed (DGX Spark, BF16, 256 tok) | **~65 tok/s** |
 | Context | Configurable up to 256K tokens |
 
-**Note:** Speed on DGX Spark (GB10) will differ from H100/RTX 5090 benchmarks. The model uses block-autoregressive diffusion (256-token canvas) which shifts the decode bottleneck from memory-bandwidth to compute.
+**Note:** Speed on DGX Spark (GB10) differs from H100/RTX 5090 benchmarks. The model uses block-autoregressive diffusion (256-token canvas) — short generations pay the full canvas overhead (~2 tok/s for ≤32 tok), while full-canvas generations are most efficient.
+
+## Real-World Benchmark (DGX Spark BF16)
+
+Measured on DGX Spark (GB10, 128 GB unified, `GPU_MEM_UTIL=0.55`, BF16 unquantized, 48 denoising steps, 256 canvas):
+
+| Test | Output | Avg tok/s | Min | Max |
+|------|--------|-----------|-----|-----|
+| Short (max 32 tok) | 2 tok | **2.0** | 1.7 | 2.7 |
+| Medium (max 128 tok) | ~100 tok | **42.1** | 40.4 | 44.0 |
+| Long (max 256 tok) | 256 tok | **65.5** | 59.0 | 72.2 |
+| Reasoning (max 256 tok) | 256 tok | **66.6** | 50.4 | 78.8 |
+| **Grand average** | — | **44.1** | — | — |
+
+The diffusion architecture always generates a full 256-token canvas then returns the requested slice — so short outputs have the same latency as full canvases but lower throughput. For maximum throughput, use larger `max_tokens` values (≥256). Run your own benchmark with `benchmark.py`.
 
 ## Architecture
 
@@ -60,6 +75,7 @@ bash vllm-server.sh        # start server on port 8000
 | `test_vllm.sh` | API functional test |
 | `test_big.py` | Long-context stress test |
 | `test_tools.py` | Tool-calling test |
+| `benchmark.py` | DGX Spark speed benchmark |
 
 ## Configuration (Environment Variables)
 
