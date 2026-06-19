@@ -74,8 +74,8 @@ All settings in `vllm-server.sh` are overridable via env vars:
 | `ATTN_BACKEND` | `TRITON_ATTN` | Attention backend (required) |
 | `VLLM_QUANTIZATION` | (unset) | Disabled/avoids fp4 path, BF16 path forced (`VLLM_QUANTIZATION=fp4` blocked) |
 | `VLLM_DTYPE` | `bfloat16` | BF16 model math |
-| `TOOL_CALL_PARSER` | <disabled> | Tool calling parser intentionally disabled |
-| `REASONING_PARSER` | <disabled> | Reasoning parser intentionally disabled |
+| `TOOL_CALL_PARSER` | `gemma4` | Required for Hermes `tool_choice: auto` |
+| `REASONING_PARSER` | <disabled> | Optional; add only when you need `<|think|>` structured outputs |
 | `MAX_DENOISING_STEPS` | `48` | Diffusion denoising steps |
 | `CANVAS_LENGTH` | `256` | Tokens per diffusion block |
 | `MODEL_REPO` | `google/diffusiongemma-26B-A4B-it` | HF model repo ID |

@@ -19,6 +19,8 @@ Environment=MODEL_ALIAS=google/diffusiongemma-26B-A4B-it
 Environment=LLM_ENFORCE_EAGER=false
 Environment=MAX_DENOISING_STEPS=48
 Environment=CANVAS_LENGTH=256
+Environment=TOOL_CALL_PARSER=gemma4
+Environment=REASONING_PARSER=
 
 ExecStart=/srv/vllm2/vllm-server.sh
 
