@@ -1,19 +1,3 @@
-# vllm.service -- Systemd user service for vLLM + DiffusionGemma 26B A4B
-# DGX Spark (GB10, Grace Blackwell)
-#
-# Prerequisites (headless/SSH-only):
-#   sudo apt install dbus dbus-user-session
-#   sudo loginctl enable-linger $USER
-#   echo 'export DBUS_SESSION_BUS_ADDRESS=\"unix:path=/run/user/$(id -u)/bus\"' >> ~/.bashrc
-#
-# Installation (as normal user -- no root):
-#   mkdir -p ~/.config/systemd/user/
-#   cp vllm.service ~/.config/systemd/user/
-#   chmod +x /srv/vllm2/vllm-server.sh
-#   [ ! -d /srv/vllm2/.venv ] || chown -R $USER:$USER /srv/vllm2/.venv
-#   systemctl --user daemon-reload
-#   systemctl --user enable --now vllm
-
 [Unit]
 Description=vLLM Server -- DiffusionGemma 26B A4B (DGX Spark)
 After=network-online.target
@@ -23,27 +7,29 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=/srv/vllm2
 
-# Overridable via: systemctl --user edit vllm
-Environment=PORT=8001
+# DGX Spark (Grace Blackwell)
+# Override using `systemctl --user edit vllm` if needed.
+Environment=PORT=8000
 Environment=HOST=0.0.0.0
-Environment=MAX_MODEL_LEN=8192
-Environment=GPU_MEM_UTIL=0.42
+Environment=MAX_MODEL_LEN=262144
+Environment=GPU_MEM_UTIL=0.55
 Environment=ATTN_BACKEND=TRITON_ATTN
-Environment=TOOL_CALL_PARSER=gemma4
-Environment=REASONING_PARSER=gemma4
-# Server startup script (sources .venv)
+Environment=MODEL_REPO=google/diffusiongemma-26B-A4B-it
+Environment=MODEL_ALIAS=google/diffusiongemma-26B-A4B-it
+Environment=LLM_ENFORCE_EAGER=false
+Environment=MAX_DENOISING_STEPS=48
+Environment=CANVAS_LENGTH=256
+
 ExecStart=/srv/vllm2/vllm-server.sh
 
-# Graceful shutdown -- vLLM needs time to drain
+# vLLM needs drain time on restart/shutdown
 TimeoutStopSec=180
 KillSignal=SIGTERM
 SendSIGKILL=no
 
-# Auto-restart on crash
 Restart=on-failure
-RestartSec=30
+RestartSec=20
 
-# Resource limits
 LimitNOFILE=65536
 LimitNPROC=4096
 

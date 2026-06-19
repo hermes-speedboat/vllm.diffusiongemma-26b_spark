@@ -11,7 +11,7 @@ cd /srv/vllm2
 git clone https://github.com/hermes-speedboat/vllm.diffusiongemma-26b_spark.git .
 bash setup_vllm.sh        # uv + venv + vllm from main (diffusion gemma support)
 bash download_model.sh     # ~48 GB BF16 model via snapshot_download()
-bash vllm-server.sh        # start server on port 8001
+bash vllm-server.sh        # start server on port 8000
 ```
 
 ## Performance Expectations (DGX Spark GB10)
@@ -67,14 +67,15 @@ All settings in `vllm-server.sh` are overridable via env vars:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PORT` | `8001` | Server port |
+| `PORT` | `8000` | Server port |
 | `HOST` | `0.0.0.0` | Bind address |
-| `MAX_MODEL_LEN` | `8192` | Max context length (increase carefully) |
-| `GPU_MEM_UTIL` | `0.24` | GPU memory utilization (30 GB cap) |
+| `MAX_MODEL_LEN` | `262144` | Max context length (max context supported by this model family) |
+| `GPU_MEM_UTIL` | `0.55` | Current tuned Spark default (2 concurrent app case). Adjust per node and workload. |
 | `ATTN_BACKEND` | `TRITON_ATTN` | Attention backend (required) |
-| `QUANTIZATION` | `fp8` | Weight quantization (FP8 halves memory) |
-| `TOOL_CALL_PARSER` | `gemma4` | Tool call parser |
-| `REASONING_PARSER` | `gemma4` | Reasoning parser for thinking mode |
+| `VLLM_QUANTIZATION` | (unset) | Disabled/avoids fp4 path, BF16 path forced (`VLLM_QUANTIZATION=fp4` blocked) |
+| `VLLM_DTYPE` | `bfloat16` | BF16 model math |
+| `TOOL_CALL_PARSER` | <disabled> | Tool calling parser intentionally disabled |
+| `REASONING_PARSER` | <disabled> | Reasoning parser intentionally disabled |
 | `MAX_DENOISING_STEPS` | `48` | Diffusion denoising steps |
 | `CANVAS_LENGTH` | `256` | Tokens per diffusion block |
 | `MODEL_REPO` | `google/diffusiongemma-26B-A4B-it` | HF model repo ID |
@@ -83,12 +84,21 @@ All settings in `vllm-server.sh` are overridable via env vars:
 
 The model is 48 GB in BF16. On DGX Spark (128 GB unified):
 
-- **FP8 quantization** reduces weights to ~24 GB
-- `GPU_MEM_UTIL=0.24` caps total GPU allocation at ~30 GB
-- Remaining ~6 GB for KV cache and overhead at default context
-- Increase `GPU_MEM_UTIL` or disable `--quantization` **only** if you have headroom
+- **BF16 unquantized runtime** is used (`VLLM_DTYPE=bfloat16`, no `--quantization` flag passed)
+- `GPU_MEM_UTIL=0.55` is the current low-footprint baseline for this node
+- **FP4 is explicitly blocked** (`VLLM_QUANTIZATION=fp4` is disabled in runtime wrapper)
 
-## Systemd Autostart
+## Current Verified Runtime
+
+- Port: **8000** (`vllm.service`)
+- Model dtype: **bfloat16**
+- Memory cap: **`GPU_MEM_UTIL=0.55`**
+- Max denoising steps: **48**
+- Canvas length: **256**
+- Quantization: **not in use** (BF16-first)
+- FP4 guard: runtime strips `fp4`/`nvfp4*` if set
+- Service: `systemctl --user` unit enabled and running on `spark.lb.bitbull.ch`
+- Validation: both `/v1/models` and `/v1/chat/completions` return `200` on port 8000
 
 **Prerequisites (headless/SSH-only):**
 ```bash
@@ -111,7 +121,7 @@ systemctl --user enable --now vllm
 ## Hermes Configuration
 
 ```bash
-hermes config set model.base_url http://spark.lb.bitbull.ch:8001/v1
+hermes config set model.base_url http://spark.lb.bitbull.ch:8000/v1
 hermes config set model.provider custom
 hermes config set model.default google/diffusiongemma-26B-A4B-it
 ```
