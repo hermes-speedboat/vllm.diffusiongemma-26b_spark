@@ -118,6 +118,48 @@ systemctl --user daemon-reload
 systemctl --user enable --now vllm
 ```
 
+## Deploy notes (port, context, rollback)
+
+You can safely switch run settings and roll back quickly:
+
+### Apply current supported profile
+
+```bash
+# 1) edit one setting in vllm.service
+sed -i 's/^Environment=PORT=.*/Environment=PORT=8000/' ~/.config/systemd/user/vllm.service
+sed -i 's/^Environment=MAX_MODEL_LEN=.*/Environment=MAX_MODEL_LEN=262144/' ~/.config/systemd/user/vllm.service
+sed -i 's/^Environment=GPU_MEM_UTIL=.*/Environment=GPU_MEM_UTIL=0.55/' ~/.config/systemd/user/vllm.service
+
+# 2) reload and restart
+systemctl --user daemon-reload
+systemctl --user restart vllm
+
+# 3) confirm service is up and API is alive
+systemctl --user status vllm --no-pager -n 20
+curl -sS http://127.0.0.1:8000/v1/models | jq .
+curl -sS -X POST http://127.0.0.1:8000/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"google/diffusiongemma-26B-A4B-it","max_tokens":16,"messages":[{"role":"user","content":"Hi"}]}'
+```
+
+### Quick rollback examples
+
+```bash
+# Roll back context length only
+sed -i 's/^Environment=MAX_MODEL_LEN=.*/Environment=MAX_MODEL_LEN=8192/' ~/.config/systemd/user/vllm.service
+
+# Roll back service port only
+sed -i 's/^Environment=PORT=.*/Environment=PORT=8001/' ~/.config/systemd/user/vllm.service
+
+# Roll back GPU memory utilization only
+sed -i 's/^Environment=GPU_MEM_UTIL=.*/Environment=GPU_MEM_UTIL=0.75/' ~/.config/systemd/user/vllm.service
+
+systemctl --user daemon-reload
+systemctl --user restart vllm
+```
+
+After any rollback, validate both endpoints again (`/v1/models`, `/v1/chat/completions`).
+
 ## Hermes Configuration
 
 ```bash
