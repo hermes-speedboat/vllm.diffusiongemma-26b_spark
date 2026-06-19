@@ -7,7 +7,7 @@ import time
 import requests
 
 PORT = os.environ.get("PORT", "8001")
-HOST = os.environ.get("HOST", "spark.lb.bitbull.ch")
+HOST = os.environ.get("HOST", "127.0.0.1")
 BASE_URL = f"http://{HOST}:{PORT}/v1"
 MODEL = "google/diffusiongemma-26B-A4B-it"
 

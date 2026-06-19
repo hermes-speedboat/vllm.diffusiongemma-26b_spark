@@ -3,7 +3,7 @@
 set -euo pipefail
 
 PORT="${PORT:-8001}"
-HOST="${HOST:-spark.lb.bitbull.ch}"
+HOST="${HOST:-127.0.0.1}"
 BASE_URL="http://${HOST}:${PORT}/v1"
 
 echo "=== Testing DiffusionGemma API at ${BASE_URL} ==="

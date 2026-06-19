@@ -97,7 +97,7 @@ The model is 48 GB in BF16. On DGX Spark (128 GB unified):
 - Canvas length: **256**
 - Quantization: **not in use** (BF16-first)
 - FP4 guard: runtime strips `fp4`/`nvfp4*` if set
-- Service: `systemctl --user` unit enabled and running on `spark.lb.bitbull.ch`
+- Service: `systemctl --user` unit enabled and running on your node
 - Validation: both `/v1/models` and `/v1/chat/completions` return `200` on port 8000
 
 **Prerequisites (headless/SSH-only):**
@@ -163,7 +163,7 @@ After any rollback, validate both endpoints again (`/v1/models`, `/v1/chat/compl
 ## Hermes Configuration
 
 ```bash
-hermes config set model.base_url http://spark.lb.bitbull.ch:8000/v1
+hermes config set model.base_url http://127.0.0.1:8000/v1
 hermes config set model.provider custom
 hermes config set model.default google/diffusiongemma-26B-A4B-it
 ```
